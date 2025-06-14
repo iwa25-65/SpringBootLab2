@@ -26,6 +26,9 @@ public class Student {
     @ManyToMany(cascade = CascadeType.PERSIST)
     private List<Team> teamList;
 
+    @OneToMany(mappedBy = "student")
+    private List<Grade> grades;
+
     public long getId() {return id;}
     public void setId(long id) {this.id = id;}
 

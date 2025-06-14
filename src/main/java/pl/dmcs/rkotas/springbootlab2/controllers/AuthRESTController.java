@@ -21,6 +21,7 @@ import pl.dmcs.rkotas.springbootlab2.model.User;
 import pl.dmcs.rkotas.springbootlab2.repository.RoleRepository;
 import pl.dmcs.rkotas.springbootlab2.repository.UserRepository;
 import pl.dmcs.rkotas.springbootlab2.security.jwt.JwtProvider;
+
 import java.util.HashSet;
 import java.util.Set;
 
@@ -29,11 +30,11 @@ import java.util.Set;
 @RequestMapping("/auth")
 public class AuthRESTController {
 
-    private DaoAuthenticationProvider daoAuthenticationProvider;
-    private UserRepository userRepository;
-    private RoleRepository roleRepository;
-    private PasswordEncoder passwordEncoder;
-    private JwtProvider jwtProvider;
+    private final DaoAuthenticationProvider daoAuthenticationProvider;
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtProvider jwtProvider;
 
     @Autowired
     public AuthRESTController(DaoAuthenticationProvider daoAuthenticationProvider,
@@ -55,41 +56,51 @@ public class AuthRESTController {
         String jwt = jwtProvider.generateJwtToken(authentication);
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
 
-        return ResponseEntity.ok(new JwtResponse(jwt,userDetails.getUsername(), userDetails.getAuthorities()));
+        return ResponseEntity.ok(new JwtResponse(jwt, userDetails.getUsername(), userDetails.getAuthorities()));
     }
 
     @PostMapping("/signup")
     public ResponseEntity<?> registerUser(@Valid @RequestBody SignUpForm signUpRequest) {
-
         if (userRepository.existsByUsername(signUpRequest.getUsername())) {
-            return new ResponseEntity<>(new ResponseMessage("Fail -> Username is already taken."), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new ResponseMessage("Error: Username is already taken!"),
+                    HttpStatus.BAD_REQUEST);
         }
 
-        // Create user account
-        User user = new User(signUpRequest.getUsername(), passwordEncoder.encode(signUpRequest.getPassword()));
+        // Create new user's account
+        User user = new User(signUpRequest.getUsername(),
+                passwordEncoder.encode(signUpRequest.getPassword()));
 
         Set<String> strRoles = signUpRequest.getRole();
         Set<Role> roles = new HashSet<>();
 
-        strRoles.forEach(role -> {
-            switch (role) {
-                case "admin":
-                    Role adminRole = roleRepository.findByName(RoleName.ROLE_ADMIN)
-                            .orElseThrow(() -> new RuntimeException("Fail -> Cause: Admin Role not found."));
-                    roles.add(adminRole);
-                    break;
-                default:
-                    Role userRole = roleRepository.findByName(RoleName.ROLE_USER)
-                            .orElseThrow(() -> new RuntimeException("Fail -> Cause: User Role not found."));
-                    roles.add(userRole);
-            }
-        });
+        if (strRoles == null || strRoles.isEmpty()) {
+            Role studentRole = roleRepository.findByName(RoleName.ROLE_STUDENT)
+                    .orElseThrow(() -> new RuntimeException("Error: Student Role not found."));
+            roles.add(studentRole);
+        } else {
+            strRoles.forEach(role -> {
+                switch (role.toLowerCase()) {
+                    case "admin":
+                        Role adminRole = roleRepository.findByName(RoleName.ROLE_ADMIN)
+                                .orElseThrow(() -> new RuntimeException("Error: Admin Role not found."));
+                        roles.add(adminRole);
+                        break;
+                    case "teacher":
+                        Role teacherRole = roleRepository.findByName(RoleName.ROLE_TEACHER)
+                                .orElseThrow(() -> new RuntimeException("Error: Teacher Role not found."));
+                        roles.add(teacherRole);
+                        break;
+                    default:
+                        Role studentRole = roleRepository.findByName(RoleName.ROLE_STUDENT)
+                                .orElseThrow(() -> new RuntimeException("Error: Student Role not found."));
+                        roles.add(studentRole);
+                }
+            });
+        }
 
         user.setRoles(roles);
         userRepository.save(user);
 
-        return new ResponseEntity<>(new ResponseMessage("User registered successfully."), HttpStatus.OK);
-
+        return new ResponseEntity<>(new ResponseMessage("User registered successfully!"), HttpStatus.OK);
     }
-
 }

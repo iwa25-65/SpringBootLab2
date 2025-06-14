@@ -1,25 +1,24 @@
 package pl.dmcs.rkotas.springbootlab2.controllers;
 
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import pl.dmcs.rkotas.springbootlab2.model.Student;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+import pl.dmcs.rkotas.springbootlab2.model.Grade;
+import pl.dmcs.rkotas.springbootlab2.repository.GradeRepository;
+import java.security.Principal;
+import java.util.List;
 
-    @Controller
-        public class StudentController {
-        @RequestMapping("/student")
-        public String student(Model model) {
-            model.addAttribute("message","Simple String from StudentController.");
-            Student newStudent = new Student();
-            model.addAttribute("student",newStudent);
-            return "student";
-        }
+@RestController
+@RequestMapping("/api/students")
+public class StudentController {
+    private final GradeRepository gradeRepository;
 
-        @RequestMapping(value = "/addStudent", method = RequestMethod.POST)
-        public String addStudent(@ModelAttribute("student") Student student) {
-            System.out.println(student.getFirstname() + " " + student.getLastname() + " " + student.getEmail() + " " + student.getPhone());
-            return "redirect:student";
-        }
+    public StudentController(GradeRepository gradeRepository) {
+        this.gradeRepository = gradeRepository;
+    }
+
+    @GetMapping("/{id}/grades")
+    @PreAuthorize("hasRole('STUDENT') && #id == principal.id") // Secure by student ID
+    public List<Grade> getGrades(@PathVariable Long id) {
+        return gradeRepository.findByStudentId(id);
+    }
 }

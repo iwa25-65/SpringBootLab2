@@ -4,6 +4,7 @@ import jakarta.servlet.DispatcherType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -56,16 +57,20 @@ public class WebSecurityConfig {
                 .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests((auth) -> auth
-                        // Next line iss added to allow Spring reach .jsp pages
-                        // that should be visible to all users according to the following rules
-                        //The reason is that in 6.0, the authorization filter is run for all dispatcher types,
-                        // including FORWARD. This means that the JSP that is forwarded, also needs to be permitted.
+
                         .dispatcherTypeMatchers(DispatcherType.FORWARD).permitAll()
                         .requestMatchers("/").permitAll()
                         .requestMatchers("/student").permitAll()
                         .requestMatchers("/addStudent.html").permitAll()
                         .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/students/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/students/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/students/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/students/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/students/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/students/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/students/**").hasRole("STUDENT")
+                        .requestMatchers(HttpMethod.POST, "/api/teachers/**").hasRole("TEACHER")
+
                         .requestMatchers("/error").permitAll() // this enables the body in the exception responses
                         .requestMatchers("/exampleSecurity/user").hasRole("USER")
                         .requestMatchers("/exampleSecurity/admin").hasRole("ADMIN")
