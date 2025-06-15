@@ -2,15 +2,13 @@ package pl.dmcs.rkotas.springbootlab2.model;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
-
 import java.util.List;
 
 @Entity
 public class Address {
-
     @Id
     @GeneratedValue
-    long id;
+    private long id;
 
     private String city;
     private String street;
@@ -18,9 +16,10 @@ public class Address {
     private String postalCode;
 
     @JsonManagedReference
-    @OneToMany(mappedBy = "address", fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "address", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     private List<Student> studentList;
 
+    // Getters and Setters
     public long getId() {
         return id;
     }
@@ -67,5 +66,16 @@ public class Address {
 
     public void setStudentList(List<Student> studentList) {
         this.studentList = studentList;
+    }
+
+    // Helper methods
+    public void addStudent(Student student) {
+        studentList.add(student);
+        student.setAddress(this);
+    }
+
+    public void removeStudent(Student student) {
+        studentList.remove(student);
+        student.setAddress(null);
     }
 }

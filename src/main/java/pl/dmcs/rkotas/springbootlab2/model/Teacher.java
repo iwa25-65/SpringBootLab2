@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Objects;
 
 @Entity
-@Table(name = "teachers")  // Explicit table name
+@Table(name = "teachers")
 public class Teacher {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,14 +22,17 @@ public class Teacher {
     private String email;
 
     @Column(nullable = false)
-    private String academicTitle;  // e.g., "Prof.", "Dr.", etc.
+    private String academicTitle;
 
     @OneToMany(mappedBy = "teacher", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Subject> subjects = new ArrayList<>();
 
+    @OneToOne
+    @JoinColumn(name = "user_id")  // Remove mappedBy and add JoinColumn
+    private User user;
+
     // Constructors
-    public Teacher() {
-    }
+    public Teacher() {}
 
     public Teacher(String firstName, String lastName, String email, String academicTitle) {
         this.firstName = firstName;
@@ -41,6 +44,13 @@ public class Teacher {
     // Getters and Setters
     public Long getId() {
         return id;
+    }
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 
     public void setId(Long id) {
@@ -83,7 +93,7 @@ public class Teacher {
         return subjects;
     }
 
-    // Helper methods for bidirectional relationship
+    // Relationship Management Methods
     public void addSubject(Subject subject) {
         subjects.add(subject);
         subject.setTeacher(this);
@@ -94,7 +104,12 @@ public class Teacher {
         subject.setTeacher(null);
     }
 
-    // equals() and hashCode()
+    // Business Methods
+    public String getFullName() {
+        return academicTitle + " " + firstName + " " + lastName;
+    }
+
+    // equals(), hashCode() and toString()
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -109,7 +124,6 @@ public class Teacher {
         return Objects.hash(id, email);
     }
 
-    // toString()
     @Override
     public String toString() {
         return "Teacher{" +
@@ -119,10 +133,5 @@ public class Teacher {
                 ", email='" + email + '\'' +
                 ", academicTitle='" + academicTitle + '\'' +
                 '}';
-    }
-
-    // Business methods
-    public String getFullName() {
-        return academicTitle + " " + firstName + " " + lastName;
     }
 }

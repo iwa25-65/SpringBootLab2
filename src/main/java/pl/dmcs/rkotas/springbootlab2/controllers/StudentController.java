@@ -17,7 +17,7 @@ public class StudentController {
     }
 
     @GetMapping("/{id}/grades")
-    @PreAuthorize("hasRole('STUDENT') && #id == principal.id") // Secure by student ID
+    @PreAuthorize("hasRole('STUDENT') && #id == principal.id")
     public List<Grade> getGrades(@PathVariable Long id) {
         return gradeRepository.findByStudentId(id);
     }

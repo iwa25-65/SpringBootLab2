@@ -1,9 +1,9 @@
 package pl.dmcs.rkotas.springbootlab2.model;
 
 import jakarta.persistence.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 @Entity
 public class Subject {
@@ -15,18 +15,24 @@ public class Subject {
     private String name;
 
     @Column(nullable = false)
-    private String code;  // Example: "CS101"
+    private String code;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "teacher_id", nullable = false)
     private Teacher teacher;
 
+    @ManyToOne
+    @JoinColumn(name = "subject_id")
+    private Subject subject;
+
     @OneToMany(mappedBy = "subject", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Grade> grades = new ArrayList<>();
+    private Set<Grade> grades = new HashSet<>();
+
+    @ManyToMany(mappedBy = "enrolledSubjects")
+    private Set<Student> enrolledStudents = new HashSet<>();
 
     // Constructors
-    public Subject() {
-    }
+    public Subject() {}
 
     public Subject(String name, String code, Teacher teacher) {
         this.name = name;
@@ -37,6 +43,10 @@ public class Subject {
     // Getters and Setters
     public Long getId() {
         return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public String getName() {
@@ -63,15 +73,15 @@ public class Subject {
         this.teacher = teacher;
     }
 
-    public List<Grade> getGrades() {
+    public Set<Grade> getGrades() {
         return grades;
     }
 
-    public void setGrades(List<Grade> grades) {
-        this.grades = grades;
+    public Set<Student> getEnrolledStudents() {
+        return enrolledStudents;
     }
 
-    // Helper methods
+    // Relationship Management Methods
     public void addGrade(Grade grade) {
         grades.add(grade);
         grade.setSubject(this);
@@ -82,7 +92,17 @@ public class Subject {
         grade.setSubject(null);
     }
 
-    // equals() and hashCode()
+    public void enrollStudent(Student student) {
+        enrolledStudents.add(student);
+        student.getEnrolledSubjects().add(this);
+    }
+
+    public void unenrollStudent(Student student) {
+        enrolledStudents.remove(student);
+        student.getEnrolledSubjects().remove(this);
+    }
+
+    // equals(), hashCode() and toString()
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -97,7 +117,6 @@ public class Subject {
         return Objects.hash(id, code);
     }
 
-    // toString()
     @Override
     public String toString() {
         return "Subject{" +
