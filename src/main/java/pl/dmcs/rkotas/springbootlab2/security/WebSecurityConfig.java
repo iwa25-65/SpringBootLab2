@@ -1,27 +1,23 @@
 package pl.dmcs.rkotas.springbootlab2.security;
 
-import jakarta.servlet.DispatcherType;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.config.Customizer;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import pl.dmcs.rkotas.springbootlab2.security.jwt.JwtAuthEntryPoint;
 import pl.dmcs.rkotas.springbootlab2.security.jwt.JwtAuthTokenFilter;
 import pl.dmcs.rkotas.springbootlab2.security.services.UserDetailsServiceImpl;
-
+import org.springframework.http.HttpMethod;
 
 @Configuration
 @EnableWebSecurity
@@ -29,22 +25,14 @@ import pl.dmcs.rkotas.springbootlab2.security.services.UserDetailsServiceImpl;
 public class WebSecurityConfig {
 
     @Autowired
-    UserDetailsServiceImpl userDetailsService;
+    private JwtAuthEntryPoint unauthorizedHandler;
 
     @Autowired
-    private JwtAuthEntryPoint unauthorizedHandler;
+    private UserDetailsServiceImpl userDetailsService;
 
     @Bean
     public JwtAuthTokenFilter authenticationJwtTokenFilter() {
         return new JwtAuthTokenFilter();
-    }
-
-    @Bean
-    DaoAuthenticationProvider authProvider(){
-        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(userDetailsService);
-        authProvider.setPasswordEncoder(passwordEncoder());
-        return authProvider;
     }
 
     @Bean
@@ -54,47 +42,32 @@ public class WebSecurityConfig {
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
-        return authConfig.getAuthenticationManager();}
+        return authConfig.getAuthenticationManager();
+    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-
         http
-                .cors(Customizer.withDefaults())
-                .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests((auth) -> auth
-
-                        .dispatcherTypeMatchers(DispatcherType.FORWARD).permitAll()
-                        .requestMatchers("/").permitAll()
-                        .requestMatchers("/student").permitAll()
-                        .requestMatchers("/addStudent.html").permitAll()
-                        .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/students/**").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/students/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/students/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PATCH, "/students/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/students/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/students/**").hasRole("STUDENT")
-                        .requestMatchers(HttpMethod.POST, "/api/teachers/**").hasRole("TEACHER")
-                        .requestMatchers(HttpMethod.GET, "/api/enrollments/**").hasRole("STUDENT")
-                        .requestMatchers(HttpMethod.POST, "/api/enrollments/**").hasRole("STUDENT")
-                        .requestMatchers(HttpMethod.DELETE, "/api/enrollments/**").hasRole("STUDENT")
-                        .requestMatchers(HttpMethod.GET, "/api/grades/**").hasAnyRole("STUDENT", "TEACHER")
+                .csrf(csrf -> csrf.disable())
+                .cors(Customizer.withDefaults()) // ✅ enable your WebConfig CORS settings
+                .exceptionHandling(ex -> ex.authenticationEntryPoint(unauthorizedHandler))
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/auth/**").permitAll() // ✅ allow sign in/up
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/teachers/**").hasAnyRole("TEACHER", "ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/teachers/grades").hasRole("TEACHER")
-
-                        .requestMatchers("/error").permitAll() // this enables the body in the exception responses
-                        .requestMatchers("/exampleSecurity/user").hasRole("USER")
-                        .requestMatchers("/exampleSecurity/admin").hasRole("ADMIN")
+                        .requestMatchers("/api/students/**").hasAnyRole("STUDENT", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/enrollments/**").hasRole("STUDENT")
+                        .requestMatchers(HttpMethod.GET, "/api/enrollments/**").hasRole("STUDENT")
+                        .requestMatchers(HttpMethod.DELETE, "/api/enrollments/**").hasRole("STUDENT")
                         .anyRequest().authenticated()
                 )
-                .exceptionHandling(unauthorized -> unauthorized
-                        .authenticationEntryPoint(unauthorizedHandler)
-                )
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+                .addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
 
-        http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
-}
 
+
+
+}

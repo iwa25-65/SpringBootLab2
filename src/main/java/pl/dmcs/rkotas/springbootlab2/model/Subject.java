@@ -1,5 +1,6 @@
 package pl.dmcs.rkotas.springbootlab2.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.util.HashSet;
 import java.util.Objects;
@@ -10,20 +11,12 @@ public class Subject {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(nullable = false, unique = true)
     private String name;
-
-    @Column(nullable = false)
     private String code;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "teacher_id", nullable = false)
     private Teacher teacher;
-
-    @ManyToOne
-    @JoinColumn(name = "subject_id")
-    private Subject subject;
 
     @OneToMany(mappedBy = "subject", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Grade> grades = new HashSet<>();
@@ -81,7 +74,7 @@ public class Subject {
         return enrolledStudents;
     }
 
-    // Relationship Management Methods
+    // Relationship Management
     public void addGrade(Grade grade) {
         grades.add(grade);
         grade.setSubject(this);
@@ -102,11 +95,10 @@ public class Subject {
         student.getEnrolledSubjects().remove(this);
     }
 
-    // equals(), hashCode() and toString()
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof Subject)) return false;
         Subject subject = (Subject) o;
         return Objects.equals(id, subject.id) &&
                 Objects.equals(code, subject.code);

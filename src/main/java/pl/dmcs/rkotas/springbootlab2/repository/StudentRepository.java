@@ -9,4 +9,6 @@ import java.util.Optional;
 public interface StudentRepository extends JpaRepository<Student, Long> {
     // Correct method signature
     Optional<Student> findById(Long id);
+    Optional<Student> findByUser_Username(String username);
+
 }

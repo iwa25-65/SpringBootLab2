@@ -1,10 +1,13 @@
 package pl.dmcs.rkotas.springbootlab2.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.util.Objects;
 
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @Entity
 public class Grade {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -12,20 +15,21 @@ public class Grade {
     @Column(nullable = false)
     private double value;
 
-    @Column(nullable = true)
+    @Column
     private String comment;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "student_id", nullable = false)
+    @JsonIgnoreProperties({"enrolledSubjects", "address", "user"})
     private Student student;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "subject_id", nullable = false)
+    @JsonIgnoreProperties({"grades", "enrolledStudents", "teacher"})
     private Subject subject;
 
-    // Constructors
-    public Grade() {
-    }
+    // === Constructors ===
+    public Grade() {}
 
     public Grade(double value, Student student, Subject subject) {
         this.value = value;
@@ -40,52 +44,27 @@ public class Grade {
         this.subject = subject;
     }
 
-    // Getters and Setters
-    public Long getId() {
-        return id;
-    }
+    // === Getters & Setters ===
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public double getValue() { return value; }
+    public void setValue(double value) { this.value = value; }
 
-    public double getValue() {
-        return value;
-    }
+    public String getComment() { return comment; }
+    public void setComment(String comment) { this.comment = comment; }
 
-    public void setValue(double value) {
-        this.value = value;
-    }
+    public Student getStudent() { return student; }
+    public void setStudent(Student student) { this.student = student; }
 
-    public String getComment() {
-        return comment;
-    }
+    public Subject getSubject() { return subject; }
+    public void setSubject(Subject subject) { this.subject = subject; }
 
-    public void setComment(String comment) {
-        this.comment = comment;
-    }
-
-    public Student getStudent() {
-        return student;
-    }
-
-    public void setStudent(Student student) {
-        this.student = student;
-    }
-
-    public Subject getSubject() {
-        return subject;
-    }
-
-    public void setSubject(Subject subject) {
-        this.subject = subject;
-    }
-
-    // equals() and hashCode()
+    // === equals & hashCode ===
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof Grade)) return false;
         Grade grade = (Grade) o;
         return Double.compare(grade.value, value) == 0 &&
                 Objects.equals(id, grade.id) &&
@@ -97,7 +76,7 @@ public class Grade {
         return Objects.hash(id, value, comment);
     }
 
-    // toString()
+    // === toString ===
     @Override
     public String toString() {
         return "Grade{" +

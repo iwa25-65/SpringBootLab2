@@ -13,6 +13,10 @@ import pl.dmcs.rkotas.springbootlab2.repository.UserRepository;
 @Service
 public class UserDetailsServiceImpl  implements UserDetailsService {
 
+    /**
+     * User repository for accessing user data.
+     */
+
     @Autowired
     UserRepository userRepository;
 

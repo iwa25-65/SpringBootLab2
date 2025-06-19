@@ -1,6 +1,7 @@
 package pl.dmcs.rkotas.springbootlab2.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import java.util.HashSet;
 import java.util.Set;
@@ -12,24 +13,19 @@ public class Student {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
     private String firstname;
-
-    @Column(nullable = false)
     private String lastname;
-
-    @Column(nullable = false, unique = true)
     private String email;
-
     private String phone;
 
+    @JsonBackReference
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "address_id")
-    @JsonBackReference
     private Address address;
 
+    @JsonManagedReference
     @OneToOne
-    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    @JoinColumn(name = "user_id")
     private User user;
 
     @ManyToMany
@@ -38,30 +34,37 @@ public class Student {
             inverseJoinColumns = @JoinColumn(name = "subject_id"))
     private Set<Subject> enrolledSubjects = new HashSet<>();
 
-    // Constructors
+    // === Constructors ===
     public Student() {}
 
-    // Getters and setters
+    // === Getters & Setters ===
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+
     public String getFirstname() { return firstname; }
     public void setFirstname(String firstname) { this.firstname = firstname; }
+
     public String getLastname() { return lastname; }
     public void setLastname(String lastname) { this.lastname = lastname; }
+
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
+
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
+
     public Address getAddress() { return address; }
     public void setAddress(Address address) { this.address = address; }
+
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
+
     public Set<Subject> getEnrolledSubjects() { return enrolledSubjects; }
     public void setEnrolledSubjects(Set<Subject> enrolledSubjects) {
         this.enrolledSubjects = enrolledSubjects;
     }
 
-    // Helper methods
+    // === Helper Methods ===
     public void enrollInSubject(Subject subject) {
         this.enrolledSubjects.add(subject);
         subject.getEnrolledStudents().add(this);
